@@ -1,6 +1,7 @@
 library(semper)
 source("bivariateLgcm.R")
 source("toOpenMx.R")
+source("input_presets.R")
 
 library(shiny)
 library(ggplot2)
@@ -15,6 +16,16 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
+            titlePanel("Presets:"),
+            
+            selectInput("preset",
+                        "Choose a preset:",
+                        choices = list(
+                            Preset_1 = preset1,
+                            Preset_2 = preset2,
+                            Preset_3 = preset3
+                        )),
+            
             titlePanel("Variable X:"),
             
             # Input params for variable X
