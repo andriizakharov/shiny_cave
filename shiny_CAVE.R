@@ -1,7 +1,7 @@
 library(semper)
 source("bivariateLgcm.R")
 source("toOpenMx.R")
-#source("input_presets.R")
+source("input_presets.R")
 source("helper_functions.R")
 
 library(shiny)
@@ -22,8 +22,26 @@ ui <- fluidPage(
             selectInput("preset",
                         "Choose a preset:",
                         choices = list("",
-                            "custom"
+                            "custom", "vls_RT_WRC"
                         )),
+            
+            conditionalPanel("input.preset != 'custom'",
+                h2("Variable X:"),
+                numericInput("mean_icept_x",
+                             "X: intercept mean",
+                             value = 0),
+                numericInput("mean_slope_x",
+                             "X: slope mean",
+                             value = 0),
+                
+                h2("Variable Y:"),
+                numericInput("mean_icept_y",
+                             "Y: intercept mean",
+                             value = 0),
+                numericInput("mean_slope_y",
+                             "Y: slope mean",
+                             value = 0)
+                ),
             
             conditionalPanel("input.preset == 'custom'",
                 h2("Variable X:"),
@@ -140,71 +158,101 @@ server <- function(input, output) {
     ### Reactive calculations
     
     # Define the models given all input parameters
-    lgcm_x <- reactive({ 
-        req(input$timepoints, input$var_icept_x, input$var_slope_x,
-            input$error_var_x, input$cov_icept_x_slope_x, input$mean_icept_x,
-            input$mean_slope_x)
-        lgcm(
-            timepoints = 1:input$timepoints,
-            intercept.variance = input$var_icept_x,
-            slope.variance = input$var_slope_x,
-            residual.variance = input$error_var_x,
-            intercept.slope.covariance = input$cov_icept_x_slope_x,
-            intercept.mean = input$mean_icept_x,
-            slope.mean = input$mean_slope_x
-    ) })
-    lgcm_y <- reactive({ 
-        req(input$timepoints, input$var_icept_y, input$var_slope_y,
-            input$error_var_y, input$cov_icept_y_slope_y, input$mean_icept_y,
-            input$mean_slope_y)
-        lgcm(
-            timepoints = 1:input$timepoints,
-            intercept.variance = input$var_icept_y,
-            slope.variance = input$var_slope_y,
-            residual.variance = input$error_var_y,
-            intercept.slope.covariance = input$cov_icept_y_slope_y,
-            intercept.mean = input$mean_icept_y,
-            slope.mean = input$mean_slope_y
-    ) })
+    if(input$presets == "vls_RT_WRC"){
+        lgcm_x <- reactive({ 
+           lgcm(
+                timepoints = vls_RT_WRC_timepoints,
+                intercept.variance = vls_RT_WRC$sigma2_Ix,
+                slope.variance = vls_RT_WRC$sigma2_Sx,
+                residual.variance = vls_RT_WRC$sigma2_Ex,
+                intercept.slope.covariance = vls_RT_WRC$sigma_IxSx,
+                intercept.mean = input$mean_icept_x,
+                slope.mean = input$mean_slope_x 
+            ) })
+        lgcm_y <- reactive({ 
+            lgcm(
+                timepoints = vls_RT_WRC_timepoints,
+                intercept.variance = vls_RT_WRC$sigma2_Iy,
+                slope.variance = vls_RT_WRC$sigma2_Sy,
+                residual.variance = vls_RT_WRC$sigma2_Ey,
+                intercept.slope.covariance = vls_RT_WRC$sigma_IySy,
+                intercept.mean = input$mean_icept_y,
+                slope.mean = input$mean_slope_y 
+            ) })
+        lgcm_xy <- reactive({ 
+            bivariateLgcm(
+                lgcm_x(), lgcm_y(), 
+                icept.x.icept.y.covariance = vls_RT_WRC$sigma_IyIx, 
+                slope.x.slope.y.covariance = vls_RT_WRC$sigma_SySx
+            ) })
+    } else {
+        lgcm_x <- reactive({ 
+            req(input$timepoints, input$var_icept_x, input$var_slope_x,
+                input$error_var_x, input$cov_icept_x_slope_x, input$mean_icept_x,
+                input$mean_slope_x)
+            lgcm(
+                timepoints = 1:input$timepoints,
+                intercept.variance = input$var_icept_x,
+                slope.variance = input$var_slope_x,
+                residual.variance = input$error_var_x,
+                intercept.slope.covariance = input$cov_icept_x_slope_x,
+                intercept.mean = input$mean_icept_x,
+                slope.mean = input$mean_slope_x
+            ) })
+        lgcm_y <- reactive({ 
+            req(input$timepoints, input$var_icept_y, input$var_slope_y,
+                input$error_var_y, input$cov_icept_y_slope_y, input$mean_icept_y,
+                input$mean_slope_y)
+            lgcm(
+                timepoints = 1:input$timepoints,
+                intercept.variance = input$var_icept_y,
+                slope.variance = input$var_slope_y,
+                residual.variance = input$error_var_y,
+                intercept.slope.covariance = input$cov_icept_y_slope_y,
+                intercept.mean = input$mean_icept_y,
+                slope.mean = input$mean_slope_y
+            ) })
+        
+        cov_slope_x_slope_y <- reactive({ 
+            req(input$cor_slope_x_slope_y, input$var_slope_x, input$var_slope_y)
+            input$cor_slope_x_slope_y * sqrt(input$var_slope_x * input$var_slope_y) 
+        })
+        
+        lgcm_xy <- reactive({ 
+            req(input$cov_icept_x_icept_y)
+            bivariateLgcm(
+                lgcm_x(), lgcm_y(), 
+                icept.x.icept.y.covariance = input$cov_icept_x_icept_y, 
+                slope.x.slope.y.covariance = cov_slope_x_slope_y()
+            ) })
+        
+        var_x <- reactive({ 
+            req(input$var_icept_x, input$var_slope_x, input$cov_icept_x_slope_x,
+                input$mean_slope_x, input$error_var_x)
+            input$var_icept_x + 1/3*input$var_slope_x + input$cov_icept_x_slope_x + 
+                1/12*input$mean_slope_x**2 + input$error_var_x })
+        var_y <- reactive({ 
+            req(input$var_icept_y, input$var_slope_y, input$cov_icept_y_slope_y,
+                input$mean_slope_y, input$error_var_y)
+            input$var_icept_y + 1/3*input$var_slope_y + input$cov_icept_y_slope_y + 
+                1/12*input$mean_slope_y**2 + input$error_var_y })
+        
+        cov_x_y <- reactive({ 
+            req(input$cov_icept_x_icept_y, input$cov_icept_x_slope_y, 
+                input$cov_icept_y_slope_x, input$mean_slope_x, input$mean_slope_y)
+            input$cov_icept_x_icept_y + 
+                1/2*(input$cov_icept_x_slope_y + input$cov_icept_y_slope_x) +
+                1/3*cov_slope_x_slope_y() +
+                1/12*input$mean_slope_x*input$mean_slope_y })
+        
+        # Compute SOS
+        sos <- reactive({ 
+            req(input$mean_slope_y, input$mean_slope_x)
+            1 - 12*var_y()*(input$mean_slope_y*var_x() - input$mean_slope_x*cov_x_y())**2 /
+                ((var_y()*var_x() - cov_x_y()**2) * (12*var_x() - input$mean_slope_x**2)*
+                     input$mean_slope_y**2) })
+    }
     
-    cov_slope_x_slope_y <- reactive({ 
-        req(input$cor_slope_x_slope_y, input$var_slope_x, input$var_slope_y)
-        input$cor_slope_x_slope_y * sqrt(input$var_slope_x * input$var_slope_y) 
-    })
-    
-    lgcm_xy <- reactive({ 
-        req(input$cov_icept_x_icept_y)
-        bivariateLgcm(
-            lgcm_x(), lgcm_y(), 
-            icept.x.icept.y.covariance = input$cov_icept_x_icept_y, 
-            slope.x.slope.y.covariance = cov_slope_x_slope_y()
-        ) })
-    
-    var_x <- reactive({ 
-        req(input$var_icept_x, input$var_slope_x, input$cov_icept_x_slope_x,
-            input$mean_slope_x, input$error_var_x)
-        input$var_icept_x + 1/3*input$var_slope_x + input$cov_icept_x_slope_x + 
-        1/12*input$mean_slope_x**2 + input$error_var_x })
-    var_y <- reactive({ 
-        req(input$var_icept_y, input$var_slope_y, input$cov_icept_y_slope_y,
-            input$mean_slope_y, input$error_var_y)
-        input$var_icept_y + 1/3*input$var_slope_y + input$cov_icept_y_slope_y + 
-        1/12*input$mean_slope_y**2 + input$error_var_y })
-    
-    cov_x_y <- reactive({ 
-        req(input$cov_icept_x_icept_y, input$cov_icept_x_slope_y, 
-            input$cov_icept_y_slope_x, input$mean_slope_x, input$mean_slope_y)
-        input$cov_icept_x_icept_y + 
-        1/2*(input$cov_icept_x_slope_y + input$cov_icept_y_slope_x) +
-        1/3*cov_slope_x_slope_y() +
-        1/12*input$mean_slope_x*input$mean_slope_y })
-    
-    # Compute SOS
-    sos <- reactive({ 
-        req(input$mean_slope_y, input$mean_slope_x)
-        1 - 12*var_y()*(input$mean_slope_y*var_x() - input$mean_slope_x*cov_x_y())**2 /
-        ((var_y()*var_x() - cov_x_y()**2) * (12*var_x() - input$mean_slope_x**2)*
-             input$mean_slope_y**2) })
     
     # Make an OpenMx model
     mx_mod <- reactive({ toOpenMx(lgcm_xy()) })
