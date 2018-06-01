@@ -126,8 +126,10 @@ ui <- fluidPage(
         mainPanel(
             titlePanel("SOS:"),
             h2(htmlOutput("sos_val")),
-            plotOutput("lgcm_graphs"),
-            plotOutput("scatter_plots")
+            plotOutput("lgcm_graph_x"),
+            plotOutput("lgcm_graph_y"),
+            plotOutput("scatter_plot_x"),
+            plotOutput("scatter_plot_y")
         )
     )
 )
@@ -220,19 +222,30 @@ server <- function(input, output) {
     
     output$sos_val <- renderText( sos() )
     
-    output$lgcm_graphs <- renderPlot({
+    output$lgcm_graph_x <- renderPlot({
         
-        ggplot(dat_long(), aes(x = timepoint, y = value)) +
-            geom_line(aes(group = id)) +
-            facet_grid(var ~.)
+        ggplot(dat_long()[[1]], aes(x = timepoint, y = value)) +
+            geom_line(aes(group = id))
+
+    })
+    
+    output$lgcm_graph_y <- renderPlot({
+        
+        ggplot(dat_long()[[2]], aes(x = timepoint, y = value)) +
+            geom_line(aes(group = id))
         
     })
     
-    output$scatter_plots <- renderPlot({
+    output$scatter_plot_x <- renderPlot({
         
-        ggplot(dat_one_per_person(), aes(x = timepoint, y = value)) +
-            geom_point() +
-            facet_grid(var ~.)
+        ggplot(dat_one_per_person()[[1]], aes(x = timepoint, y = value)) +
+            geom_point()
+    })
+    
+    output$scatter_plot_y <- renderPlot({
+        
+        ggplot(dat_one_per_person()[[2]], aes(x = timepoint, y = value)) +
+            geom_point()
     })
 }
 
