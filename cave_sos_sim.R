@@ -432,3 +432,49 @@ plt_x_scatter <- ggplot(dat_x_one_per_person, aes(x = timepoint, y = value)) +
 
 plt_y_scatter <- ggplot(dat_y_one_per_person, aes(x = timepoint, y = value)) +
                             geom_point()
+
+
+#### Getting to the bottom of flat sos-cor curves
+cor_vec <- seq(0,1,0.01)
+sos_by_cor1 <- function(mean_slope_x, var_icept_x, var_slope_x, error_var_x,
+                       mean_slope_y, var_icept_y, var_slope_y, error_var_y,
+                       cov_icept_x_slope_x, cov_icept_y_slope_y,
+                       cov_icept_x_slope_y, cov_icept_y_slope_x, 
+                       cov_icept_x_icept_y) {
+    
+    
+    sos_vec <- rep(NA, 101)
+    for (i in 1:101) {
+        cor_slope_x_slope_y <- cor_vec[i]
+        cov_slope_x_slope_y <- cor_slope_x_slope_y * sqrt(var_slope_x*var_slope_y)
+        
+        var_x <- var_icept_x + 1/3*var_slope_x + cov_icept_x_slope_x + 
+            1/12*mean_slope_x**2 + error_var_x
+        var_y <- var_icept_y + 1/3*var_slope_y + cov_icept_y_slope_y + 
+            1/12*mean_slope_y**2 + error_var_y
+        
+        cov_x_y <- cov_icept_x_icept_y + 
+            1/2*(cov_icept_x_slope_y + cov_icept_y_slope_x) +
+            1/3*cov_slope_x_slope_y +
+            1/12*mean_slope_x*mean_slope_y
+        
+        sos <- 1 - 12*var_y*(mean_slope_y*var_x - mean_slope_x*cov_x_y)**2 /
+            ((var_y*var_x - cov_x_y**2) * (12*var_x - mean_slope_x**2)*mean_slope_y**2)
+        
+        #if(sos < 0) sos <- 0
+        
+        sos_vec[i] <- sos
+    }
+    sos_vec
+}
+
+all_curves = data.frame(cor = cor_vec)
+
+for (i in seq(-50,50,10)){
+    for (j in seq(-50,50,10)){
+        this_curve = sos_by_cor1(i, 14, 0.056, 5, 
+                                 j, 2872, 27, 2816, 
+                                 0.25, 42, -5.8, -3.5, -62)
+        all_curves = cbind(all_curves, this_curve)
+    }
+}
