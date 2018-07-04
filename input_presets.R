@@ -1,7 +1,7 @@
 library(dplyr)
 
 ### Rast & Hofer 2013, Table 5
-data_all <- read.csv("Hertzog-Table5.csv", sep = ";", dec = ",")
+data_all <- read.csv("data/Hertzog-Table5.csv", sep = ";", dec = ",")
 names(data_all) <- c("Study", "y", "x", "N", "sigma2_Iy", "sigma2_Sy",
                      "sigma2_Ix", "sigma2_Sx", "sigma_IySy", "sigma_IyIx",
                      "sigma_IySx", "sigma_SyIx", "sigma_SySx", "sigma_IxSx",
