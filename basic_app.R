@@ -12,21 +12,13 @@ ui <- fluidPage(
                selectInput("preset",
                            "Choose a preset:",
                            choices = list("LOGH_2011_A", "LOGH_2011_B", "LOGH_2011_C",
-                                          "custom", "vls_RT_WRC", "acad_A_CD", "elsa_AF_PM"
-                           ))
+                                          "custom", "vls_RT_WRC", "acad_A_CD", "elsa_AF_PM"),
+                           selected = "LOGH_2011_A"
+                           )
         )
     ),
     
-    conditionalPanel("input.preset == 'vls_RT_WRC' || 
-                     input.preset == 'acad_A_CD' ||
-                     input.preset == 'elsa_AF_PM'",
-                     numericInput("mean_slope_x",
-                                  "X: slope mean",
-                                  value = 1),
-                     numericInput("mean_slope_y",
-                                  "Y: slope mean",
-                                  value = 1)
-    ),
+
     
     conditionalPanel("input.preset == 'custom'",
                      fluidRow(
@@ -35,7 +27,7 @@ ui <- fluidPage(
                                 
                                 numericInput("mean_slope_x",
                                              "X: slope mean",
-                                             value = 1),
+                                             value = 0),
                                 numericInput("sigma2_Ix",
                                              "X: intercept variance",
                                              value = 0),
@@ -55,7 +47,7 @@ ui <- fluidPage(
                                 
                                 numericInput("mean_slope_y",
                                              "Y: slope mean",
-                                             value = 1),
+                                             value = 0),
                                 numericInput("sigma2_Iy",
                                              "Y: intercept variance",
                                              value = 0),
@@ -90,6 +82,23 @@ ui <- fluidPage(
                          )
 
     ),
+    
+    # conditionalPanel("input.preset == 'vls_RT_WRC' ||
+    #                  input.preset == 'acad_A_CD' ||
+    #                  input.preset == 'elsa_AF_PM'",
+    #                     fluidRow(
+    #                         column(width = 6,
+    #                                numericInput("mean_slope_x",
+    #                                             "X: slope mean",
+    #                                             value = 1),
+    #                                numericInput("mean_slope_y",
+    #                                             "Y: slope mean",
+    #                                             value = 1)
+    #                                )
+    #                     )
+    # 
+    # ),
+    
     conditionalPanel("input.preset != 'custom'",
         fluidRow(
             column(width = 12,
@@ -98,17 +107,49 @@ ui <- fluidPage(
         )
     )
     ),
-    fluidRow(plotOutput("sos_plot")),
-    fluidRow(column(width = 6,
-                    actionButton("sos",
-                                 "SOS!"))
-             )
+    fluidRow(plotOutput("sos_plot"))
+    # fluidRow(column(width = 6,
+    #                 actionButton("sos",
+    #                              "SOS!"))
+    #          )
     )
 
 
-server <- function(input, output) {
-   
-    sos_cor_df <- eventReactive(input$sos, {
+server <- function(input, output, session) {
+    
+    observeEvent(input$preset, {
+        if(input$preset != "custom") {
+            x <<- get(input$preset) 
+        }
+        for(p in param_names) {
+            updateNumericInput(session, p, value = x[[p]])
+            if (is.null(x[[p]])) {
+                updateNumericInput(session, p, value = 1)
+            }
+        }
+            
+   })
+
+    # sos_cor_df <- reactive({
+    #     if(input$preset != "custom") {
+    #         x <- get(input$preset)
+    #         
+    #         sos_by_cor(x$mean_slope_x, x$sigma2_Ix, x$sigma2_Sx,
+    #                                  x$sigma2_Ex,
+    #                                  x$mean_slope_y, x$sigma2_Iy, x$sigma2_Sy,
+    #                                  x$sigma2_Ey,
+    #                                  x$sigma_IxSx, x$sigma_IySy, x$sigma_SyIx,
+    #                                  x$sigma_IySx, x$sigma_IyIx)
+    #     } else {
+    #        sos_by_cor(input$mean_slope_x, input$sigma2_Ix, input$sigma2_Sx,
+    #                                  input$sigma2_Ex,
+    #                                  input$mean_slope_y, input$sigma2_Iy, input$sigma2_Sy,
+    #                                  input$sigma2_Ey,
+    #                                  input$sigma_IxSx, input$sigma_IySy, input$sigma_SyIx,
+    #                                  input$sigma_IySx, input$sigma_IyIx)
+    #     }
+    # })
+    sos_cor_df <- reactive({
         if(input$preset == "LOGH_2011_A") {
             sos_by_cor(LOGH_2011_A$mean_slope_x, LOGH_2011_A$sigma2_Ix, LOGH_2011_A$sigma2_Sx,
                        LOGH_2011_A$sigma2_Ex,
@@ -116,7 +157,7 @@ server <- function(input, output) {
                        LOGH_2011_A$sigma2_Ey,
                        LOGH_2011_A$sigma_IxSx, LOGH_2011_A$sigma_IySy, LOGH_2011_A$sigma_SyIx,
                        LOGH_2011_A$sigma_IySx, LOGH_2011_A$sigma_IyIx)
-            
+
         } else if(input$preset == "LOGH_2011_B"){
             sos_by_cor(LOGH_2011_B$mean_slope_x, LOGH_2011_B$sigma2_Ix, LOGH_2011_B$sigma2_Sx,
                        LOGH_2011_B$sigma2_Ex,
@@ -124,7 +165,7 @@ server <- function(input, output) {
                        LOGH_2011_B$sigma2_Ey,
                        LOGH_2011_B$sigma_IxSx, LOGH_2011_B$sigma_IySy, LOGH_2011_B$sigma_SyIx,
                        LOGH_2011_B$sigma_IySx, LOGH_2011_B$sigma_IyIx)
-            
+
         } else if(input$preset == "LOGH_2011_C"){
             sos_by_cor(LOGH_2011_C$mean_slope_x, LOGH_2011_C$sigma2_Ix, LOGH_2011_C$sigma2_Sx,
                        LOGH_2011_C$sigma2_Ex,
@@ -132,7 +173,7 @@ server <- function(input, output) {
                        LOGH_2011_C$sigma2_Ey,
                        LOGH_2011_C$sigma_IxSx, LOGH_2011_C$sigma_IySy, LOGH_2011_C$sigma_SyIx,
                        LOGH_2011_C$sigma_IySx, LOGH_2011_C$sigma_IyIx)
-            
+
         } else if(input$preset == "custom"){
             sos_by_cor(input$mean_slope_x, input$sigma2_Ix, input$sigma2_Sx,
                        input$sigma2_Ex,
@@ -140,7 +181,7 @@ server <- function(input, output) {
                        input$sigma2_Ey,
                        input$sigma_IxSx, input$sigma_IySy, input$sigma_SyIx,
                        input$sigma_IySx, input$sigma_IyIx)
-            
+
         } else if(input$preset == "vls_RT_WRC"){
             sos_by_cor(input$mean_slope_x, vls_RT_WRC$sigma2_Ix, vls_RT_WRC$sigma2_Sx,
                        vls_RT_WRC$sigma2_Ex,
@@ -148,7 +189,7 @@ server <- function(input, output) {
                        vls_RT_WRC$sigma2_Ey,
                        vls_RT_WRC$sigma_IxSx, vls_RT_WRC$sigma_IySy, vls_RT_WRC$sigma_SyIx,
                        vls_RT_WRC$sigma_IySx, vls_RT_WRC$sigma_IyIx)
-            
+
         } else if(input$preset == "acad_A_CD"){
             sos_by_cor(input$mean_slope_x, acad_A_CD$sigma2_Ix, acad_A_CD$sigma2_Sx,
                        acad_A_CD$sigma2_Ex,
@@ -156,7 +197,7 @@ server <- function(input, output) {
                        acad_A_CD$sigma2_Ey,
                        acad_A_CD$sigma_IxSx, acad_A_CD$sigma_IySy, acad_A_CD$sigma_SyIx,
                        acad_A_CD$sigma_IySx, acad_A_CD$sigma_IyIx)
-            
+
         } else if(input$preset == "elsa_AF_PM"){
             sos_by_cor(input$mean_slope_x, elsa_AF_PM$sigma2_Ix, elsa_AF_PM$sigma2_Sx,
                        elsa_AF_PM$sigma2_Ex,
@@ -165,9 +206,9 @@ server <- function(input, output) {
                        elsa_AF_PM$sigma_IxSx, elsa_AF_PM$sigma_IySy, elsa_AF_PM$sigma_SyIx,
                        elsa_AF_PM$sigma_IySx, elsa_AF_PM$sigma_IyIx)
         }
-        
+
     })
-    
+
     output$sos_plot <- renderPlot({
         ggplot(sos_cor_df(), aes(x = cor, y = sos)) +
             geom_line() +
@@ -178,7 +219,7 @@ server <- function(input, output) {
     })
     
     output$params <- renderTable({
-        get(input$preset)
+        if (input$preset != "custom") get(input$preset)
     })
     
 }

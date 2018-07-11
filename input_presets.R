@@ -34,3 +34,9 @@ LOGH_2011_C <- list(sigma2_Iy = 100, sigma2_Ix = 100, sigma2_Sy = 200, sigma2_Sx
                     sigma2_Ex = 25, sigma2_Ey = 25, sigma_IyIx = 60, sigma_IySy = 0,
                     sigma_IySx = 0, sigma_SyIx = 0, sigma_IxSx = 0, mean_slope_x = -14,
                     mean_slope_y = -5)
+
+### Parameter names to use in initializing values for custom preset
+param_names <- c("sigma2_Iy", "sigma2_Sy",
+                 "sigma2_Ix", "sigma2_Sx", "sigma_IySy", "sigma_IyIx",
+                 "sigma_IySx", "sigma_SyIx", "sigma_IxSx",
+                 "sigma2_Ey", "sigma2_Ex", "mean_slope_x", "mean_slope_y")
