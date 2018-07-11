@@ -15,6 +15,9 @@ ui <- fluidPage(
                                           "custom", "vls_RT_WRC", "acad_A_CD", "elsa_AF_PM"),
                            selected = "LOGH_2011_A"
                            )
+        ),
+        column(width = 6,
+               htmlOutput("textbox")
         )
     ),
     
@@ -119,7 +122,8 @@ server <- function(input, output, session) {
     
     observeEvent(input$preset, {
         if(input$preset != "custom") {
-            x <<- get(input$preset) 
+            x <<- get(input$preset)
+            this_preset <<- input$preset
         }
         for(p in param_names) {
             updateNumericInput(session, p, value = x[[p]])
@@ -127,9 +131,11 @@ server <- function(input, output, session) {
                 updateNumericInput(session, p, value = 1)
             }
         }
-            
+        output$textbox <- renderText(refs[[this_preset]])
+        
    })
-
+    
+    
     # sos_cor_df <- reactive({
     #     if(input$preset != "custom") {
     #         x <- get(input$preset)

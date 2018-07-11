@@ -40,3 +40,18 @@ param_names <- c("sigma2_Iy", "sigma2_Sy",
                  "sigma2_Ix", "sigma2_Sx", "sigma_IySy", "sigma_IyIx",
                  "sigma_IySx", "sigma_SyIx", "sigma_IxSx",
                  "sigma2_Ey", "sigma2_Ex", "mean_slope_x", "mean_slope_y")
+
+### References for the textbox
+LOGH_ref <- "Lindenberger, U., Von Oertzen, T., Ghisletta, P., 
+            & Hertzog, C. (2011). Cross-sectional age variance extraction: 
+            what's change got to do with it?. Psychology and aging, 26(1), 34."
+RastHofer_ref <- "Rast, P., & Hofer, S. M. (2014). Longitudinal design considerations 
+                to optimize power to detect variances and covariances among rates of 
+                change: Simulation results based on actual longitudinal studies. 
+                Psychological Methods, 19(1), 133.\n p. 11 table 5"
+refs <- list(LOGH_2011_A = paste0(LOGH_ref, "\np.38 panel A"),
+             LOGH_2011_B = paste0(LOGH_ref, "\np.38 panel B"),
+             LOGH_2011_C = paste0(LOGH_ref, "\np.38 panel C"),
+             vls_RT_WRC = RastHofer_ref,
+             acad_A_CD = RastHofer_ref,
+             elsa_AF_PM = RastHofer_ref)
