@@ -1,5 +1,7 @@
 library(shiny)
+library(shinyBS)
 library(ggplot2)
+library(DT)
 
 source("input_presets.R")
 source("helper_functions.R")
@@ -107,12 +109,14 @@ ui <- fluidPage(
         fluidRow(
             column(width = 12,
                    h3("Parameter values"),
-                   tableOutput("params")
+                   div(dataTableOutput("params"), style = "font-size: 80%; width: 80%")
                
         )
     )
     ),
-    fluidRow(plotOutput("sos_plot")),
+    fluidRow(column(width = 12, 
+                    h3(""),
+                    plotOutput("sos_plot"))),
     # fluidRow(column(width = 6,
     #                 actionButton("sos",
     #                              "SOS!"))
@@ -226,15 +230,56 @@ server <- function(input, output, session) {
             geom_line() +
             scale_y_continuous("Shared-over-simple effects",
                                limits = c(0,1)) +
-            labs(title = "Shared-over-simple (SOS) effects by slope-slope correlation 
-                  of the variables X and Y", x = "Slope-slope correlation X-Y") 
+            labs(title = "Shared-over-simple (SOS) effects by slope-slope correlation of the variables X and Y", x = "Slope-slope correlation X-Y") 
     })
     
-    output$params <- renderTable({
-        if (input$preset != "custom") get(input$preset)
-    })
+    output$params <- renderDataTable(
+        if (input$preset == "LOGH_2011_A" |
+            input$preset == "LOGH_2011_B" |
+            input$preset == "LOGH_2011_C") {
+            datatable(data.frame(get(input$preset)),
+                      options = list(dom = "t", 
+                                     ordering = FALSE),
+                      rownames = FALSE,
+                      callback = JS("var tips = ['Intercept variance of variable Y',
+'Intercept variance of variable X', 'Slope variance of variable Y',
+'Slope variance of variable X', 'Error variance of variable X', 'Error variance of variable Y',
+'Intercept covariance of variables X and Y', 'Covariance intercept Y - slope Y',
+'Covariance intercept Y - slope X', 'Covariance intercept X - slope Y', 
+'Covariance intercept X - slope X', 'Slope mean of variable X', 'Slope mean of variable Y'],
+                                    header = table.columns().header();
+                                    for (var i = 0; i < tips.length; i++) {
+                                    $(header[i]).attr('title', tips[i]);
+                                    }
+                                    "))
+        }
+        else if (input$preset == "vls_RT_WRC" |
+            input$preset == "acad_A_CD" |
+            input$preset == "elsa_AF_PM") {
+            datatable(data.frame(get(input$preset)),
+                      options = list(dom = "t", 
+                                     ordering = FALSE),
+                      rownames = FALSE,
+                      callback = JS("var tips = ['Study name', 'Variable Y', 'Variable X', 'Number of subjects in the study', 'Intercept variance of variable Y',
+                                    'Slope variance of variable Y', 'Intercept variance of variable X', 
+                                    'Slope variance of variable X', 
+                                    'Covariance intercept Y - slope Y', 'Intercept covariance of variables X and Y', 
+                                    'Covariance intercept Y - slope X', 'Covariance intercept X - slope Y', 
+                                    'Covariance slope X - slope Y', 'Covariance intercept X - slope X', 'Error variance of variable Y', 'Error variance of variable X',
+                                    'Error covariance of variables X and Y', 'Number of waves in the study', 'Length of the study in years'],
+                                    header = table.columns().header();
+                                    for (var i = 0; i < tips.length; i++) {
+                                    $(header[i]).attr('title', tips[i]);
+                                    }
+                                    "))
+        }
+    )
     
     output$description <- renderText(descr)
+    
+    addPopover(session, "sos_plot", "Parameter description", 
+               content = "This is this parameter, that is that",
+               trigger = "hover")
     
 }
 
