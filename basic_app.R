@@ -8,15 +8,16 @@ ui <- fluidPage(
     titlePanel("Slope-slope correlation vs. Shared-over-simple effects"),
     fluidRow(
         column(width = 6,
-               h2("Presets:"),
+               h3("Choose preset:"),
                selectInput("preset",
-                           "Choose a preset:",
+                           "",
                            choices = list("LOGH_2011_A", "LOGH_2011_B", "LOGH_2011_C",
                                           "custom", "vls_RT_WRC", "acad_A_CD", "elsa_AF_PM"),
                            selected = "LOGH_2011_A"
                            )
         ),
         column(width = 6,
+               h3("Reference:"),
                htmlOutput("textbox")
         )
     ),
@@ -105,18 +106,23 @@ ui <- fluidPage(
     conditionalPanel("input.preset != 'custom'",
         fluidRow(
             column(width = 12,
-                tableOutput("params")
+                   h3("Parameter values"),
+                   tableOutput("params")
                
         )
     )
     ),
-    fluidRow(plotOutput("sos_plot"))
+    fluidRow(plotOutput("sos_plot")),
     # fluidRow(column(width = 6,
     #                 actionButton("sos",
     #                              "SOS!"))
     #          )
+    fluidRow(column(width = 12,
+                    h3("What's going on here?"),
+                    htmlOutput("description"))
     )
-
+    )
+    
 
 server <- function(input, output, session) {
     
@@ -227,6 +233,8 @@ server <- function(input, output, session) {
     output$params <- renderTable({
         if (input$preset != "custom") get(input$preset)
     })
+    
+    output$description <- renderText(descr)
     
 }
 
